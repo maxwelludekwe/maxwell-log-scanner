@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, Eye, EyeOff, Play, Pause, Trash2, RotateCcw, Filter, Sun, Moon, Mail, Save, Search } from 'lucide-react';
+import { Upload, Eye, EyeOff, Play, Pause, Trash2, RotateCcw, Filter, Sun, Moon, Mail, Save, Search, BarChart3, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { ThreatChart } from './ThreatChart';
+import { ThreatBarChart } from './ThreatBarChart';
 import { LogEntry } from './LogEntry';
 import { EmailModal } from './EmailModal';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +29,7 @@ const LogScanner = () => {
   const [showIPs, setShowIPs] = useState(true);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterSource, setFilterSource] = useState<string>('all');
+  const [chartView, setChartView] = useState<'pie' | 'bar' | 'both'>('pie');
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,7 +37,7 @@ const LogScanner = () => {
   const [selectedLogs, setSelectedLogs] = useState<LogData[]>([]);
   const { toast } = useToast();
 
-  // Mock threat data for the pie chart
+  // Mock threat data for the charts
   const threatData = [
     { name: 'Low', value: 45, color: '#10B981' },
     { name: 'Medium', value: 30, color: '#F59E0B' },
@@ -187,236 +189,32 @@ const LogScanner = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              CyberLog Sentinel
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+              Maxwell CyberLog Scanner
             </h1>
-            <p className="text-gray-400 mt-2">Advanced Cybersecurity Log Analysis Platform</p>
+            <p className="text-gray-400 mt-1 text-sm">Advanced Cybersecurity Log Analysis Platform</p>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <Button
               onClick={() => setDarkMode(!darkMode)}
               variant="outline"
               size="sm"
-              className="glow-button"
+              className="glow-button h-8 w-8 p-0"
             >
-              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {darkMode ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
             </Button>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <Card className={`mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-sm">
-              <Search className="h-4 w-4 mr-2" />
-              Search Logs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex space-x-2">
-              <Input
-                placeholder="Search by IP address, message, source, level, or timestamp..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                onClick={resetSearch}
-                variant="outline"
-                className="glow-button"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Search supports IPv4/IPv6 addresses, keywords, and partial matches
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Controls Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
-          {/* Upload Section */}
-          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Upload Logs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".log,.txt"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full glow-button"
-                variant="outline"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload File
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Live Mode Controls */}
-          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Live Session</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                onClick={() => setIsLiveMode(!isLiveMode)}
-                className={`w-full glow-button ${isLiveMode ? 'bg-green-600 hover:bg-green-700' : ''}`}
-                variant={isLiveMode ? "default" : "outline"}
-              >
-                {isLiveMode ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-                {isLiveMode ? 'Stop Live' : 'Start Live'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* View Controls */}
-          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">View Options</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Show IPs</span>
-                <Switch checked={showIPs} onCheckedChange={setShowIPs} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Auto Scroll</span>
-                <Switch checked={autoScroll} onCheckedChange={setAutoScroll} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Export & Share */}
-          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Export & Share</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                onClick={saveLogsOffline}
-                variant="outline"
-                className="w-full glow-button"
-                size="sm"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Offline
-              </Button>
-              <Button
-                onClick={handleEmailForward}
-                variant="outline"
-                className="w-full glow-button"
-                size="sm"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Email Forward
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Log Management */}
-          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Log Management</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                onClick={clearLogs}
-                variant="destructive"
-                className="w-full glow-button"
-                size="sm"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear Logs
-              </Button>
-              <Button
-                onClick={resetFilters}
-                variant="outline"
-                className="w-full glow-button"
-                size="sm"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset Filters
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className={`mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="text-sm text-gray-400 mb-2 block">Threat Level</label>
-                <Select value={filterLevel} onValueChange={setFilterLevel}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Levels</SelectItem>
-                    <SelectItem value="info">Info</SelectItem>
-                    <SelectItem value="warning">Warning</SelectItem>
-                    <SelectItem value="error">Error</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm text-gray-400 mb-2 block">Source</label>
-                <Select value={filterSource} onValueChange={setFilterSource}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    {uniqueSources.map(source => (
-                      <SelectItem key={source} value={source}>{source}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-end">
-                <Button
-                  onClick={() => setShowIPs(!showIPs)}
-                  variant="outline"
-                  className="glow-button"
-                >
-                  {showIPs ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
-                  {showIPs ? 'Hide IPs' : 'Show IPs'}
-                </Button>
-              </div>
-              
-              <div className="text-sm text-gray-400">
-                {searchTerm ? `Found: ${filteredLogs.length} / ${logs.length}` : `Total Logs: ${logs.length}`}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Log Stream - Moved to Top */}
-        <Card className={`mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+        {/* Log Stream - Moved to Very Top */}
+        <Card className={`mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between text-lg">
               <span>Security Log Stream</span>
               {isLiveMode && (
                 <div className="flex items-center space-x-2">
@@ -429,7 +227,7 @@ const LogScanner = () => {
           <CardContent>
             <div
               ref={logsContainerRef}
-              className="h-96 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-300"
+              className="h-80 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-300"
             >
               {filteredLogs.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
@@ -449,15 +247,280 @@ const LogScanner = () => {
           </CardContent>
         </Card>
 
-        {/* Threat Analysis Chart */}
-        <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <CardHeader>
-            <CardTitle>Threat Level Distribution</CardTitle>
+        {/* Search Bar */}
+        <Card className={`mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-sm">
+              <Search className="h-3 w-3 mr-2" />
+              Search Logs
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ThreatChart data={threatData} />
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Search by IP address, message, source, level, or timestamp..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 h-8 text-sm"
+              />
+              <Button
+                onClick={resetSearch}
+                variant="outline"
+                size="sm"
+                className="glow-button h-8 w-8 p-0"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Search supports IPv4/IPv6 addresses, keywords, and partial matches
+            </p>
           </CardContent>
         </Card>
+
+        {/* Compact Controls Row */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+          {/* Upload Section */}
+          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs">Upload</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".log,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full glow-button h-7 text-xs"
+                variant="outline"
+                size="sm"
+              >
+                <Upload className="h-3 w-3 mr-1" />
+                File
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Live Mode Controls */}
+          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs">Live Mode</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-1">
+              <Button
+                onClick={() => setIsLiveMode(!isLiveMode)}
+                className={`w-full glow-button h-7 text-xs ${isLiveMode ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                variant={isLiveMode ? "default" : "outline"}
+                size="sm"
+              >
+                {isLiveMode ? <Pause className="h-3 w-3 mr-1" /> : <Play className="h-3 w-3 mr-1" />}
+                {isLiveMode ? 'Stop' : 'Start'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* View Controls */}
+          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs">View</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-1 space-y-1">
+              <div className="flex items-center text-xs">
+                <span className="flex-1">IPs</span>
+                <Switch checked={showIPs} onCheckedChange={setShowIPs} className="scale-75" />
+              </div>
+              <div className="flex items-center text-xs">
+                <span className="flex-1">Scroll</span>
+                <Switch checked={autoScroll} onCheckedChange={setAutoScroll} className="scale-75" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Export & Share */}
+          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs">Export</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-1 space-y-1">
+              <Button
+                onClick={saveLogsOffline}
+                variant="outline"
+                className="w-full glow-button h-6 text-xs"
+                size="sm"
+              >
+                <Save className="h-3 w-3 mr-1" />
+                Save
+              </Button>
+              <Button
+                onClick={handleEmailForward}
+                variant="outline"
+                className="w-full glow-button h-6 text-xs"
+                size="sm"
+              >
+                <Mail className="h-3 w-3 mr-1" />
+                Email
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Log Management */}
+          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs">Manage</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-1 space-y-1">
+              <Button
+                onClick={clearLogs}
+                variant="destructive"
+                className="w-full glow-button h-6 text-xs"
+                size="sm"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Clear
+              </Button>
+              <Button
+                onClick={resetFilters}
+                variant="outline"
+                className="w-full glow-button h-6 text-xs"
+                size="sm"
+              >
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Reset
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Chart Controls */}
+          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs">Charts</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-1">
+              <Select value={chartView} onValueChange={(value: 'pie' | 'bar' | 'both') => setChartView(value)}>
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pie">
+                    <div className="flex items-center">
+                      <PieChart className="h-3 w-3 mr-1" />
+                      Pie
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="bar">
+                    <div className="flex items-center">
+                      <BarChart3 className="h-3 w-3 mr-1" />
+                      Bar
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card className={`mb-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-sm">
+              <Filter className="h-3 w-3 mr-2" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Threat Level</label>
+                <Select value={filterLevel} onValueChange={setFilterLevel}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="info">Info</SelectItem>
+                    <SelectItem value="warning">Warning</SelectItem>
+                    <SelectItem value="error">Error</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Source</label>
+                <Select value={filterSource} onValueChange={setFilterSource}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    {uniqueSources.map(source => (
+                      <SelectItem key={source} value={source}>{source}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-end">
+                <Button
+                  onClick={() => setShowIPs(!showIPs)}
+                  variant="outline"
+                  className="glow-button h-8 text-xs"
+                  size="sm"
+                >
+                  {showIPs ? <Eye className="h-3 w-3 mr-1" /> : <EyeOff className="h-3 w-3 mr-1" />}
+                  {showIPs ? 'Hide IPs' : 'Show IPs'}
+                </Button>
+              </div>
+              
+              <div className="text-xs text-gray-400 flex items-end">
+                {searchTerm ? `Found: ${filteredLogs.length} / ${logs.length}` : `Total Logs: ${logs.length}`}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Threat Analysis Charts */}
+        {chartView === 'both' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Threat Level Distribution (Pie)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ThreatChart data={threatData} />
+              </CardContent>
+            </Card>
+            
+            <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Threat Level Distribution (Bar)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ThreatBarChart data={threatData} />
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">
+                Threat Level Distribution ({chartView === 'pie' ? 'Pie Chart' : 'Bar Chart'})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {chartView === 'pie' ? (
+                <ThreatChart data={threatData} />
+              ) : (
+                <ThreatBarChart data={threatData} />
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
       
       <EmailModal
