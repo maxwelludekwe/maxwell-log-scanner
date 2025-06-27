@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -100,4 +101,83 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
+  background-color: #4B5563;
+  border-radius: 6px;
+}
+
+.scrollbar-track-gray-300::-webkit-scrollbar-track {
+  background-color: #D1D5DB;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6B7280;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Glow effect for buttons */
+.glow-button {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.glow-button:hover {
+  @apply shadow-lg;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+.glow-button:active {
+  transform: translateY(0);
+}
+
+/* Cybersecurity themed glow effects */
+.glow-button.bg-green-600:hover {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+}
+
+.glow-button.bg-red-600:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+}
+
+.glow-button.bg-yellow-600:hover {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+}
+
+/* Threat level specific animations */
+@keyframes threatPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.threat-critical {
+  animation: threatPulse 2s infinite;
+}
+
+/* Enhanced focus states for accessibility */
+.glow-button:focus {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
 }
