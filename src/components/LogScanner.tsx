@@ -413,54 +413,51 @@ const LogScanner = () => {
           </CardContent>
         </Card>
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Threat Analysis Chart */}
-          <Card className={`lg:col-span-1 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader>
-              <CardTitle>Threat Level Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ThreatChart data={threatData} />
-            </CardContent>
-          </Card>
+        {/* Log Stream - Moved to Top */}
+        <Card className={`mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Security Log Stream</span>
+              {isLiveMode && (
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-green-500">Live</span>
+                </div>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div
+              ref={logsContainerRef}
+              className="h-96 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-300"
+            >
+              {filteredLogs.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  {searchTerm ? 'No logs match your search criteria.' : 'No logs to display. Upload a log file or start live monitoring.'}
+                </div>
+              ) : (
+                filteredLogs.map((log) => (
+                  <LogEntry
+                    key={log.id}
+                    log={log}
+                    showIP={showIPs}
+                    darkMode={darkMode}
+                  />
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Log Stream */}
-          <Card className={`lg:col-span-2 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Security Log Stream</span>
-                {isLiveMode && (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-500">Live</span>
-                  </div>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div
-                ref={logsContainerRef}
-                className="h-96 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-300"
-              >
-                {filteredLogs.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">
-                    {searchTerm ? 'No logs match your search criteria.' : 'No logs to display. Upload a log file or start live monitoring.'}
-                  </div>
-                ) : (
-                  filteredLogs.map((log) => (
-                    <LogEntry
-                      key={log.id}
-                      log={log}
-                      showIP={showIPs}
-                      darkMode={darkMode}
-                    />
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Threat Analysis Chart */}
+        <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <CardHeader>
+            <CardTitle>Threat Level Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ThreatChart data={threatData} />
+          </CardContent>
+        </Card>
       </div>
       
       <EmailModal
