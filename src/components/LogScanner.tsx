@@ -1,12 +1,14 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, Eye, EyeOff, Play, Pause, Trash2, RotateCcw, Filter, Sun, Moon } from 'lucide-react';
+import { Upload, Eye, EyeOff, Play, Pause, Trash2, RotateCcw, Filter, Sun, Moon, Mail, Save, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { ThreatChart } from './ThreatChart';
 import { LogEntry } from './LogEntry';
+import { EmailModal } from './EmailModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface LogData {
   id: string;
@@ -28,6 +30,10 @@ const LogScanner = () => {
   const [filterSource, setFilterSource] = useState<string>('all');
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedLogs, setSelectedLogs] = useState<LogData[]>([]);
+  const { toast } = useToast();
 
   // Mock threat data for the pie chart
   const threatData = [
@@ -44,6 +50,7 @@ const LogScanner = () => {
     const messages = [
       'Failed login attempt detected',
       'Suspicious network activity',
+      'Malware signature detected',
       'Malware signature detected',
       'Port scan detected',
       'Unauthorized access attempt',
@@ -81,7 +88,7 @@ const LogScanner = () => {
     }
   }, [logs, autoScroll]);
 
-  // Filter logs
+  // Enhanced filter logs with search functionality
   useEffect(() => {
     let filtered = logs;
     
@@ -92,9 +99,30 @@ const LogScanner = () => {
     if (filterSource !== 'all') {
       filtered = filtered.filter(log => log.source === filterSource);
     }
+
+    // Search functionality
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(log => {
+        // Search in IP addresses (both IPv4 and IPv6 patterns)
+        const ipv4Pattern = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g;
+        const ipv6Pattern = /\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b/g;
+        
+        return (
+          log.ip.toLowerCase().includes(searchLower) ||
+          log.message.toLowerCase().includes(searchLower) ||
+          log.source.toLowerCase().includes(searchLower) ||
+          log.level.toLowerCase().includes(searchLower) ||
+          log.timestamp.toLowerCase().includes(searchLower) ||
+          log.id.toLowerCase().includes(searchLower) ||
+          ipv4Pattern.test(log.message) && log.message.toLowerCase().includes(searchLower) ||
+          ipv6Pattern.test(log.message) && log.message.toLowerCase().includes(searchLower)
+        );
+      });
+    }
     
     setFilteredLogs(filtered);
-  }, [logs, filterLevel, filterSource]);
+  }, [logs, filterLevel, filterSource, searchTerm]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -128,6 +156,33 @@ const LogScanner = () => {
     setFilterSource('all');
   };
 
+  const saveLogsOffline = () => {
+    const dataStr = JSON.stringify(filteredLogs, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `security-logs-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Logs Saved",
+      description: `${filteredLogs.length} logs saved to your device`,
+    });
+  };
+
+  const handleEmailForward = () => {
+    setSelectedLogs(filteredLogs);
+    setIsEmailModalOpen(true);
+  };
+
+  const resetSearch = () => {
+    setSearchTerm('');
+  };
+
   const uniqueSources = Array.from(new Set(logs.map(log => log.source)));
 
   return (
@@ -154,8 +209,38 @@ const LogScanner = () => {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <Card className={`mb-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-sm">
+              <Search className="h-4 w-4 mr-2" />
+              Search Logs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Search by IP address, message, source, level, or timestamp..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                onClick={resetSearch}
+                variant="outline"
+                className="glow-button"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Search supports IPv4/IPv6 addresses, keywords, and partial matches
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Controls Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
           {/* Upload Section */}
           <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <CardHeader className="pb-3">
@@ -211,6 +296,33 @@ const LogScanner = () => {
                 <span className="text-sm">Auto Scroll</span>
                 <Switch checked={autoScroll} onCheckedChange={setAutoScroll} />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Export & Share */}
+          <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Export & Share</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                onClick={saveLogsOffline}
+                variant="outline"
+                className="w-full glow-button"
+                size="sm"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Offline
+              </Button>
+              <Button
+                onClick={handleEmailForward}
+                variant="outline"
+                className="w-full glow-button"
+                size="sm"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Email Forward
+              </Button>
             </CardContent>
           </Card>
 
@@ -295,7 +407,7 @@ const LogScanner = () => {
               </div>
               
               <div className="text-sm text-gray-400">
-                Total Logs: {filteredLogs.length}
+                {searchTerm ? `Found: ${filteredLogs.length} / ${logs.length}` : `Total Logs: ${logs.length}`}
               </div>
             </div>
           </CardContent>
@@ -333,7 +445,7 @@ const LogScanner = () => {
               >
                 {filteredLogs.length === 0 ? (
                   <div className="text-center text-gray-400 py-8">
-                    No logs to display. Upload a log file or start live monitoring.
+                    {searchTerm ? 'No logs match your search criteria.' : 'No logs to display. Upload a log file or start live monitoring.'}
                   </div>
                 ) : (
                   filteredLogs.map((log) => (
@@ -350,6 +462,13 @@ const LogScanner = () => {
           </Card>
         </div>
       </div>
+      
+      <EmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        logs={selectedLogs}
+        darkMode={darkMode}
+      />
     </div>
   );
 };
