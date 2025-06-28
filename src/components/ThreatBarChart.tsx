@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface ThreatData {
   name: string;
@@ -53,14 +53,12 @@ export const ThreatBarChart: React.FC<ThreatBarChartProps> = ({ data }) => {
           <Tooltip content={<CustomTooltip />} />
           <Bar 
             dataKey="value" 
-            fill="#8884d8"
             radius={[4, 4, 0, 0]}
           >
             {data.map((entry, index) => (
-              <Bar 
+              <Cell 
                 key={`cell-${index}`} 
                 fill={entry.color}
-                className="hover:opacity-80 transition-opacity duration-200"
               />
             ))}
           </Bar>
